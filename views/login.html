@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <link href="/public/styles.css" rel="stylesheet">
+</head>
+
+<body>
+  <h1>Login</h1>
+  <form action="/auth/check-user" method="POST">
+    <input type="email" name="email" placeholder="email" required>
+    <input type="password" name="password" placeholder="password" required>
+    <button class="button">Submit</button>
+  </form>
+</body>
+
+</html>

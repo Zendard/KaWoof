@@ -12,11 +12,16 @@ async fn index() -> Option<NamedFile> {
 
 #[launch]
 fn rocket() -> _ {
-    let connection = sqlite::open(":memory:").unwrap();
-    let query = "CREATE TABLE users (email TEXT, password TEXT);";
-    connection.execute(query).unwrap();
     rocket::build()
         .mount("/", routes![index])
-        .mount("/auth", routes![auth::signup_get, auth::signup_post])
+        .mount(
+            "/auth",
+            routes![
+                auth::signup_get,
+                auth::signup_post,
+                auth::login,
+                auth::check_user
+            ],
+        )
         .mount("/public", FileServer::from("public"))
 }
