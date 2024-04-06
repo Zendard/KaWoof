@@ -3,6 +3,7 @@ extern crate rocket;
 use rocket::fs::FileServer;
 use rocket::fs::NamedFile;
 mod auth;
+mod create;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -35,5 +36,6 @@ fn rocket() -> _ {
                 auth::check_user,
             ],
         )
+        .mount("/create", routes![create::create, create::create_post])
         .mount("/public", FileServer::from("public"))
 }

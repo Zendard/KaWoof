@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link href="public/styles.css" rel="stylesheet">
+</head>
+
+<body>
+  <form action="/create" method="POST">
+    <input type="text" name="title" placeholder="KaWoof title">
+    <fieldset class="questions">
+      <fieldset class="group">
+        <input type="text" name="questions[1].question" placeholder="Question">
+        <fieldset class="answers">
+          <fieldset class="answer">
+            <input type="text" name="questions[1].answers[1]" placeholder="Answer 1">
+            <input type="radio" name="questions[1].correct_answer" value="1">
+          </fieldset>
+          <fieldset class="answer">
+            <input type="text" name="questions[1].answers[2]" placeholder="Answer 2">
+            <input type="radio" name="questions[1].correct_answer" value="2">
+          </fieldset>
+          <fieldset class="answer">
+            <input type="text" name="questions[1].answers[3]" placeholder="Answer 3">
+            <input type="radio" name="questions[1].correct_answer" value="3">
+          </fieldset>
+          <fieldset class="answer">
+            <input type="text" name="questions[1].answers[4]" placeholder="Answer 4">
+            <input type="radio" name="questions[1].correct_answer" value="4">
+          </fieldset>
+        </fieldset>
+      </fieldset>
+    </fieldset>
+    <button>Create</button>
+  </form>
+</body>
+
+</html>

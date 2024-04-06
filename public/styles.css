@@ -2,6 +2,7 @@
   --text: #ffffff;
   --background: #000000;
   --accent: hsl(120, 30%, 40%);
+  --primary: hsl(120, 10%, 30%);
 }
 
 body {
@@ -21,7 +22,8 @@ h1 {
   font-size: 5rem;
 }
 
-button {
+button,
+a.button {
   background-color: var(--accent);
   padding: 1rem 2rem;
   border-radius: 1rem;
@@ -36,4 +38,14 @@ form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+fieldset {
+  border-radius: 1rem;
+}
+
+fieldset.group {
+  background-color: var(--primary);
+  border: none;
+  padding: 1rem;
 }

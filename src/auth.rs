@@ -24,7 +24,7 @@ pub async fn signup_get() -> Option<NamedFile> {
 #[post("/signup", data = "<user>")]
 pub async fn signup_post(user: Form<UserLogin>) -> String {
     println!("New user:{:?}", user);
-    let connection = rusqlite::Connection::open("./db/users.db").unwrap();
+    let connection = rusqlite::Connection::open("./db/kawoof.db").unwrap();
     let query = "INSERT INTO users(email,password) VALUES (:email, :password);";
     let exec = connection.execute(query, (&user.email, &user.password));
     println!("{:#?}", exec);
@@ -32,7 +32,7 @@ pub async fn signup_post(user: Form<UserLogin>) -> String {
 }
 
 async fn get_users() -> Vec<UserDB> {
-    let connection = rusqlite::Connection::open("./db/users.db").unwrap();
+    let connection = rusqlite::Connection::open("./db/kawoof.db").unwrap();
     let query = "SELECT * FROM users";
     let rows = connection
         .prepare(query)
