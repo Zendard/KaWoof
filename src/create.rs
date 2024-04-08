@@ -23,7 +23,7 @@ pub async fn create_post(user: UserAuth, kawoof: Form<KaWoofForm>) -> rocket::re
     let mut question_ids:Vec<i64> = vec![];
     println!("{:#?}", kawoof.questions);
     for question in kawoof.questions.iter(){
-        let answers_joined = question.answers.join(";");
+        let answers_joined = question.answers.iter().map(|e| e.replace(";", ",")).collect::<Vec<String>>().join(";");
 
         let result:SqliteQueryResult = sqlx::query!("INSERT INTO questions(question,correct_answer,answers) VALUES (?,?,?)",
             question.question,
