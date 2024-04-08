@@ -1,3 +1,4 @@
+use crate::db_connection;
 use crate::UserAuth;
 use crate::UserDB;
 use cookie::time::Duration;
@@ -5,7 +6,6 @@ use rocket::form::Form;
 use rocket::fs::NamedFile;
 use rocket::http::{Cookie, CookieJar};
 use sqlx::sqlite::SqlitePoolOptions;
-use crate::db_connection;
 
 #[derive(FromForm, Debug, PartialEq)]
 pub struct UserLogin {
@@ -21,36 +21,45 @@ pub async fn signup_get() -> Option<NamedFile> {
 #[post("/signup", data = "<user>")]
 pub async fn signup_post(user: Form<UserLogin>) -> rocket::response::Redirect {
     println!("New user:{:?}", user);
-    let hashed_password=pwhash::bcrypt::hash(&user.password).unwrap();
+    let hashed_password = pwhash::bcrypt::hash(&user.password).unwrap();
 
     let connection = db_connection!();
     sqlx::query("INSERT INTO users(email,password) VALUES (?,?);")
         .bind(&user.email)
         .bind(hashed_password)
-        .execute(&connection).await.unwrap();
+        .execute(&connection)
+        .await
+        .unwrap();
     rocket::response::Redirect::to("/")
 }
 
 async fn get_users() -> Vec<UserDB> {
     let connection = db_connection!();
-    let rows = sqlx::query_as!(UserDB,"SELECT * FROM users;").fetch_all(&connection).await.unwrap();
+    let rows = sqlx::query_as!(UserDB, "SELECT * FROM users;")
+        .fetch_all(&connection)
+        .await
+        .unwrap();
     println!("{:#?}", rows);
     return rows;
 }
 
 #[post("/check-user", data = "<user_login>")]
-pub async fn check_user(user_login: Form<UserLogin>, cookies: &CookieJar<'_>) -> rocket::response::Redirect {
+pub async fn check_user(
+    user_login: Form<UserLogin>,
+    cookies: &CookieJar<'_>,
+) -> rocket::response::Redirect {
     let userdb = get_users().await;
 
     let correct_user_vec: Vec<&UserDB> = userdb
         .iter()
-        .filter(|e| e.email == user_login.email && pwhash::bcrypt::verify(&user_login.password, &e.password))
+        .filter(|e| {
+            e.email == user_login.email && pwhash::bcrypt::verify(&user_login.password, &e.password)
+        })
         .collect();
-
 
     if correct_user_vec.len() != 1 {
         println!("Wrong password");
-        return rocket::response::Redirect::to("login")
+        return rocket::response::Redirect::to("login");
     };
 
     let token = UserAuth::sign(UserAuth {

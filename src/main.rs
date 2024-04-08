@@ -2,6 +2,7 @@
 extern crate rocket;
 use rocket::fs::FileServer;
 use rocket::fs::NamedFile;
+use serde::Serialize;
 mod auth;
 mod create;
 mod get_kawoofs;
@@ -35,6 +36,7 @@ fn rocket() -> _ {
         .mount("/create", routes![create::create, create::create_post])
         .mount("/my-kawoofs", routes![get_kawoofs::get_kawoofs])
         .mount("/public", FileServer::from("public"))
+        .attach(rocket_dyn_templates::Template::fairing())
 }
 
 //Exports:
@@ -47,7 +49,7 @@ macro_rules! db_connection {
             .connect("./kawoof.db")
             .await
             .unwrap()
- };
+    };
 }
 //Authentication/users
 static SECRET_KEY: &str = env!("SECRET_KEY");
@@ -64,14 +66,15 @@ pub struct UserDB {
     password: String,
 }
 //Kawoofs
-#[derive(std::fmt::Debug)]
+#[derive(std::fmt::Debug, Serialize)]
 pub struct KaWoof {
+    id: i64,
     title: String,
     author: i64,
     questions: Vec<Question>,
 }
 
-#[derive(FromForm, std::fmt::Debug)]
+#[derive(FromForm, std::fmt::Debug, Serialize)]
 struct Question {
     question: String,
     answers: Vec<String>,
