@@ -1,15 +1,12 @@
 use crate::UserAuth;
+use crate::UserDB;
 use cookie::time::Duration;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
 use rocket::http::{Cookie, CookieJar};
+use sqlx::sqlite::SqlitePoolOptions;
+use crate::db_connection;
 
-#[derive(FromForm, Debug, PartialEq)]
-pub struct UserDB {
-    id: u32,
-    email: String,
-    password: String,
-}
 #[derive(FromForm, Debug, PartialEq)]
 pub struct UserLogin {
     email: String,
@@ -22,48 +19,39 @@ pub async fn signup_get() -> Option<NamedFile> {
 }
 
 #[post("/signup", data = "<user>")]
-pub async fn signup_post(user: Form<UserLogin>) -> String {
+pub async fn signup_post(user: Form<UserLogin>) -> rocket::response::Redirect {
     println!("New user:{:?}", user);
-    let connection = rusqlite::Connection::open("./db/kawoof.db").unwrap();
-    let query = "INSERT INTO users(email,password) VALUES (:email, :password);";
-    let exec = connection.execute(query, (&user.email, &user.password));
-    println!("{:#?}", exec);
-    return "Tjoem".to_string();
+    let hashed_password=pwhash::bcrypt::hash(&user.password).unwrap();
+
+    let connection = db_connection!();
+    sqlx::query("INSERT INTO users(email,password) VALUES (?,?);")
+        .bind(&user.email)
+        .bind(hashed_password)
+        .execute(&connection).await.unwrap();
+    rocket::response::Redirect::to("/")
 }
 
 async fn get_users() -> Vec<UserDB> {
-    let connection = rusqlite::Connection::open("./db/kawoof.db").unwrap();
-    let query = "SELECT * FROM users";
-    let rows = connection
-        .prepare(query)
-        .unwrap()
-        .query_map([], |row| {
-            Ok(UserDB {
-                id: row.get(0)?,
-                email: row.get(1)?,
-                password: row.get(2)?,
-            })
-        })
-        .unwrap()
-        .map(|row| row.unwrap())
-        .collect();
+    let connection = db_connection!();
+    let rows = sqlx::query_as!(UserDB,"SELECT * FROM users;").fetch_all(&connection).await.unwrap();
     println!("{:#?}", rows);
     return rows;
 }
 
 #[post("/check-user", data = "<user_login>")]
-pub async fn check_user(user_login: Form<UserLogin>, cookies: &CookieJar<'_>) -> Option<String> {
+pub async fn check_user(user_login: Form<UserLogin>, cookies: &CookieJar<'_>) -> rocket::response::Redirect {
     let userdb = get_users().await;
 
     let correct_user_vec: Vec<&UserDB> = userdb
         .iter()
-        .filter(|e| e.email == user_login.email && e.password == user_login.password)
+        .filter(|e| e.email == user_login.email && pwhash::bcrypt::verify(&user_login.password, &e.password))
         .collect();
+
 
     if correct_user_vec.len() != 1 {
         println!("Wrong password");
-        return None;
-    }
+        return rocket::response::Redirect::to("login")
+    };
 
     let token = UserAuth::sign(UserAuth {
         id: correct_user_vec[0].id,
@@ -75,7 +63,7 @@ pub async fn check_user(user_login: Form<UserLogin>, cookies: &CookieJar<'_>) ->
             .secure(true)
             .max_age(Duration::weeks(5)),
     );
-    return Some(token);
+    rocket::response::Redirect::to("/")
 }
 
 #[get("/login")]

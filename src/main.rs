@@ -4,6 +4,7 @@ use rocket::fs::FileServer;
 use rocket::fs::NamedFile;
 mod auth;
 mod create;
+mod get_kawoofs;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -11,22 +12,17 @@ async fn index(user: UserAuth) -> Option<NamedFile> {
     NamedFile::open("views/index.html").await.ok()
 }
 
-#[get("/", rank = 2)]
+#[catch(401)]
 async fn no_account() -> Option<NamedFile> {
+    println!("Not logged in");
     NamedFile::open("views/no_account.html").await.ok()
-}
-
-static SECRET_KEY: &str = env!("SECRET_KEY");
-
-#[rocket_jwt_new::jwt(SECRET_KEY, cookie = "token")]
-pub struct UserAuth {
-    id: u32,
 }
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, no_account])
+        .mount("/", routes![index])
+        .register("/", catchers![no_account])
         .mount(
             "/auth",
             routes![
@@ -37,5 +33,47 @@ fn rocket() -> _ {
             ],
         )
         .mount("/create", routes![create::create, create::create_post])
+        .mount("/my-kawoofs", routes![get_kawoofs::get_kawoofs])
         .mount("/public", FileServer::from("public"))
+}
+
+//Exports:
+
+#[macro_export]
+macro_rules! db_connection {
+    () => {
+        SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("./kawoof.db")
+            .await
+            .unwrap()
+ };
+}
+//Authentication/users
+static SECRET_KEY: &str = env!("SECRET_KEY");
+
+#[rocket_jwt_new::jwt(SECRET_KEY, cookie = "token")]
+pub struct UserAuth {
+    id: i64,
+}
+
+#[derive(FromForm, Debug, PartialEq, sqlx::FromRow)]
+pub struct UserDB {
+    id: i64,
+    email: String,
+    password: String,
+}
+//Kawoofs
+#[derive(std::fmt::Debug)]
+pub struct KaWoof {
+    title: String,
+    author: i64,
+    questions: Vec<Question>,
+}
+
+#[derive(FromForm, std::fmt::Debug)]
+struct Question {
+    question: String,
+    answers: Vec<String>,
+    correct_answer: i64,
 }
