@@ -3,9 +3,11 @@ extern crate rocket;
 use rocket::fs::FileServer;
 use rocket::fs::NamedFile;
 use serde::Serialize;
+
 mod auth;
 mod create;
 mod get_kawoofs;
+mod play_kawoof;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -34,7 +36,11 @@ fn rocket() -> _ {
             ],
         )
         .mount("/create", routes![create::create, create::create_post])
-        .mount("/my-kawoofs", routes![get_kawoofs::get_kawoofs])
+        .mount(
+            "/my-kawoofs",
+            routes![get_kawoofs::get_kawoofs, get_kawoofs::kawoof_details],
+        )
+        .mount("/play", play_kawoof::play_kawoof)
         .mount("/public", FileServer::from("public"))
         .attach(rocket_dyn_templates::Template::fairing())
 }

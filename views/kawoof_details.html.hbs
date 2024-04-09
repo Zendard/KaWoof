@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link href="/public/styles.css" rel="stylesheet">
+</head>
+
+<body>
+  <div style="display: flex; align-items: center; gap: 2rem;">
+    <h1>{{kawoof.title}}</h1>
+    <a href="/play/{{kawoof.id}}" class="button">Play</a>
+  </div>
+  <ul>
+    {{#each kawoof.questions}}
+    <li>{{this.question}}</li>
+    {{/each}}
+  </ul>
+</body>
+
+</html>
