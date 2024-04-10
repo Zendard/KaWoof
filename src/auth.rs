@@ -5,7 +5,6 @@ use cookie::time::Duration;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
 use rocket::http::{Cookie, CookieJar};
-use sqlx::sqlite::SqlitePoolOptions;
 
 #[derive(FromForm, Debug, PartialEq)]
 pub struct UserLogin {
@@ -23,7 +22,7 @@ pub async fn signup_post(user: Form<UserLogin>) -> rocket::response::Redirect {
     println!("New user:{:?}", user);
     let hashed_password = pwhash::bcrypt::hash(&user.password).unwrap();
 
-    let connection = db_connection!();
+    let connection = db_connection().await;
     sqlx::query("INSERT INTO users(email,password) VALUES (?,?);")
         .bind(&user.email)
         .bind(hashed_password)
@@ -34,7 +33,7 @@ pub async fn signup_post(user: Form<UserLogin>) -> rocket::response::Redirect {
 }
 
 async fn get_users() -> Vec<UserDB> {
-    let connection = db_connection!();
+    let connection = db_connection().await;
     let rows = sqlx::query_as!(UserDB, "SELECT * FROM users;")
         .fetch_all(&connection)
         .await

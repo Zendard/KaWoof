@@ -3,7 +3,6 @@ use crate::Question;
 use crate::UserAuth;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
-use sqlx::sqlite::{SqlitePoolOptions, SqliteQueryResult};
 
 #[get("/")]
 pub async fn create(_user: UserAuth) -> Option<NamedFile> {
@@ -18,7 +17,7 @@ pub struct KaWoofForm {
 
 #[post("/", data = "<kawoof>")]
 pub async fn create_post(user: UserAuth, kawoof: Form<KaWoofForm>) -> rocket::response::Redirect {
-    let connection = db_connection!();
+    let connection = db_connection().await;
 
     let mut question_ids: Vec<i64> = vec![];
     println!("{:#?}", kawoof.questions);
@@ -30,7 +29,7 @@ pub async fn create_post(user: UserAuth, kawoof: Form<KaWoofForm>) -> rocket::re
             .collect::<Vec<String>>()
             .join(";");
 
-        let result: SqliteQueryResult = sqlx::query!(
+        let last_id = sqlx::query!(
             "INSERT INTO questions(question,correct_answer,answers) VALUES (?,?,?)",
             question.question,
             question.correct_answer,
@@ -38,8 +37,9 @@ pub async fn create_post(user: UserAuth, kawoof: Form<KaWoofForm>) -> rocket::re
         )
         .execute(&connection)
         .await
-        .unwrap();
-        question_ids.push(result.last_insert_rowid());
+        .unwrap()
+        .last_insert_rowid();
+        question_ids.push(last_id);
     }
     let question_ids: Vec<u8> = question_ids.iter().map(|e| *e as u8).collect();
     println!("{:#?}", user);

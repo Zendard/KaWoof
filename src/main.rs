@@ -7,7 +7,7 @@ use serde::Serialize;
 mod auth;
 mod create;
 mod get_kawoofs;
-mod play_kawoof;
+mod host_kawoof;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -40,22 +40,19 @@ fn rocket() -> _ {
             "/my-kawoofs",
             routes![get_kawoofs::get_kawoofs, get_kawoofs::kawoof_details],
         )
-        .mount("/play", play_kawoof::play_kawoof)
+        .mount("/host", routes![host_kawoof::host_kawoof])
         .mount("/public", FileServer::from("public"))
         .attach(rocket_dyn_templates::Template::fairing())
 }
 
 //Exports:
 
-#[macro_export]
-macro_rules! db_connection {
-    () => {
-        SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect("./kawoof.db")
-            .await
-            .unwrap()
-    };
+pub async fn db_connection() -> sqlx::Pool<sqlx::Sqlite> {
+    sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect("./kawoof.db")
+        .await
+        .unwrap()
 }
 //Authentication/users
 static SECRET_KEY: &str = env!("SECRET_KEY");
@@ -85,4 +82,64 @@ struct Question {
     question: String,
     answers: Vec<String>,
     correct_answer: i64,
+}
+
+#[derive(Debug)]
+struct KawoofDB {
+    id: i64,
+    title: String,
+    author: i64,
+    questions: Vec<u8>,
+}
+
+struct QuestionDB {
+    question: String,
+    correct_answer: i64,
+    answers: String,
+}
+
+pub async fn query_kawoof(id: i64, user: &UserAuth) -> KaWoof {
+    let connection = db_connection().await;
+
+    let kawoof_raw = sqlx::query_as!(
+        KawoofDB,
+        "SELECT * FROM kawoofs WHERE id=? AND author=?",
+        id,
+        user.id
+    )
+    .fetch_one(&connection)
+    .await
+    .unwrap();
+
+    let mut questions: Vec<Question> = vec![];
+
+    for question_id in kawoof_raw.questions.iter() {
+        let question_raw = sqlx::query_as!(
+            QuestionDB,
+            "SELECT question,correct_answer,answers FROM questions WHERE id=?",
+            question_id
+        )
+        .fetch_one(&connection)
+        .await
+        .unwrap();
+
+        let answers: Vec<String> = question_raw
+            .answers
+            .split(";")
+            .map(|e| e.to_string())
+            .collect();
+
+        questions.push(Question {
+            question: question_raw.question,
+            correct_answer: question_raw.correct_answer,
+            answers,
+        });
+    }
+
+    KaWoof {
+        id: kawoof_raw.id,
+        title: kawoof_raw.title,
+        author: kawoof_raw.id,
+        questions,
+    }
 }
