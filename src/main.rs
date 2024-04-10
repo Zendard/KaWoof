@@ -8,6 +8,7 @@ mod auth;
 mod create;
 mod get_kawoofs;
 mod host_kawoof;
+mod join_kawoof;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -40,21 +41,31 @@ fn rocket() -> _ {
             "/my-kawoofs",
             routes![get_kawoofs::get_kawoofs, get_kawoofs::kawoof_details],
         )
-        .mount("/host", routes![host_kawoof::host_kawoof])
+        .mount(
+            "/host",
+            routes![
+                host_kawoof::host_kawoof,
+                host_kawoof::stream,
+                host_kawoof::next_question
+            ],
+        )
+        .mount(
+            "/",
+            routes![
+                join_kawoof::join,
+                join_kawoof::enter_id,
+                join_kawoof::get_player_name,
+                join_kawoof::redirect_to_kawoof_id
+            ],
+        )
         .mount("/public", FileServer::from("public"))
         .attach(rocket_dyn_templates::Template::fairing())
+        .manage(rocket::tokio::sync::broadcast::channel::<Player>(1024).0)
+        .manage(rocket::tokio::sync::broadcast::channel::<u32>(1).0)
 }
 
-//Exports:
-
-pub async fn db_connection() -> sqlx::Pool<sqlx::Sqlite> {
-    sqlx::sqlite::SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect("./kawoof.db")
-        .await
-        .unwrap()
-}
-//Authentication/users
+//===========================Exports=============================
+//======Authentication/Users======
 static SECRET_KEY: &str = env!("SECRET_KEY");
 
 #[rocket_jwt_new::jwt(SECRET_KEY, cookie = "token")]
@@ -68,7 +79,12 @@ pub struct UserDB {
     email: String,
     password: String,
 }
-//Kawoofs
+
+#[derive(rocket::serde::Serialize, Clone, Debug, FromForm)]
+pub struct Player {
+    name: String,
+}
+//============Kawoofs============
 #[derive(std::fmt::Debug, Serialize)]
 pub struct KaWoof {
     id: i64,
@@ -96,6 +112,14 @@ struct QuestionDB {
     question: String,
     correct_answer: i64,
     answers: String,
+}
+//===========Database functions============
+pub async fn db_connection() -> sqlx::Pool<sqlx::Sqlite> {
+    sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect("./kawoof.db")
+        .await
+        .unwrap()
 }
 
 pub async fn query_kawoof(id: i64, user: &UserAuth) -> KaWoof {
