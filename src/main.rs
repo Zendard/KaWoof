@@ -72,6 +72,13 @@ fn rocket() -> _ {
 #[derive(Clone, Serialize, Debug)]
 pub struct NextQuestionEvent {
     kawoof_id: u32,
+    question: ClientQuestion,
+}
+
+#[derive(Serialize, Debug, Clone)]
+struct ClientQuestion {
+    question: String,
+    answers: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]

@@ -6,8 +6,13 @@ let next_button = document.getElementById("next_button")
 let STATE = {
   connected: false,
   started: false,
-  current_question: "",
+  question_counter: 0,
+  current_question: {},
   players: []
+}
+
+function update_question() {
+  question_element.innerText = STATE.current_question.question
 }
 
 function connect(uri) {
@@ -40,13 +45,21 @@ function connect(uri) {
     const json = JSON.parse(e.data)
     console.log(json)
 
+    if (!STATE.started) {
+      document.getElementById("pre-start").remove()
+    }
+
     STATE.started = true
     STATE.current_question = json.question
+    update_question()
   })
 }
 
 next_button.addEventListener("click", (_e) => {
-  window.fetch(document.URL + "/next-question", { method: "post" });
+  if (!STATE.connected) return
+  const question_counter = STATE.question_counter
+  window.fetch(document.URL + "/next-question", { method: "post", body: new URLSearchParams({ question_counter }) });
+  STATE.question_counter++
 })
 
 const uri = "/host/events"

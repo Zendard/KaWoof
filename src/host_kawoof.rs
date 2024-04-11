@@ -1,4 +1,4 @@
-use crate::NextQuestionEvent;
+use crate::{query_kawoof, ClientQuestion, NextQuestionEvent};
 use crate::{HostEvent, UserAuth};
 use rocket::response::stream::{Event, EventStream};
 use rocket::tokio::select;
@@ -34,13 +34,25 @@ pub async fn stream<'a>(queue: &State<Sender<HostEvent>>, mut end: Shutdown) -> 
     }
 }
 
-#[post("/<kawoof_id>/next-question")]
+#[post("/<kawoof_id>/next-question", data = "<question_counter>")]
 pub async fn next_question(
-    _user: UserAuth,
+    user: UserAuth,
     kawoof_id: u32,
-    question_id_queue: &State<Sender<HostEvent>>,
+    queue: &State<Sender<HostEvent>>,
+    question_counter: rocket::form::Form<usize>,
 ) {
-    question_id_queue
-        .send(HostEvent::NextQuestion(NextQuestionEvent { kawoof_id }))
+    let kawoof = query_kawoof(kawoof_id, Some(&user)).await;
+    let question_counter = question_counter.into_inner();
+
+    let question = ClientQuestion {
+        question: kawoof.questions[question_counter].question.clone(),
+        answers: kawoof.questions[question_counter].answers.clone(),
+    };
+
+    queue
+        .send(HostEvent::NextQuestion(NextQuestionEvent {
+            kawoof_id,
+            question,
+        }))
         .unwrap();
 }

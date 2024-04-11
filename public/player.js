@@ -3,7 +3,11 @@ const kawoof_id = window.location.pathname.replace("/lobby/", "")
 
 let STATE = {
   connected: false,
-  current_question: ""
+  current_question: {}
+}
+
+function update_question() {
+  question_element.innerText = STATE.current_question.question
 }
 
 function connect(uri) {
@@ -24,7 +28,10 @@ function connect(uri) {
 
   events.addEventListener("next_question", (e) => {
     const json = JSON.parse(e.data)
-    console.log(`Next question: ${json}`)
+    console.log(json)
+
+    STATE.current_question = json.question
+    update_question()
   })
 
   events.addEventListener("player_joined", (e) => {

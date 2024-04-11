@@ -16,12 +16,6 @@ struct ClientKawoof {
     author: u32,
 }
 
-#[derive(rocket::serde::Serialize)]
-struct ClientQuestion {
-    question: String,
-    answers: Vec<String>,
-}
-
 #[derive(FromForm)]
 pub struct Username {
     name: String,
