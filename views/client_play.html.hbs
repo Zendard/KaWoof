@@ -8,9 +8,14 @@
   <link href="/public/styles.css" rel="stylesheet">
 </head>
 
-<body>
+<body data-id={{player_id}}>
   <h2 class="top">{{kawoof_title}}</h2>
   <h1 id="question">Waiting for host to start...</h1>
+  <div id="answers"></div>
+  <dialog id="reconnecting-dialog">
+    <h1>Reconnecting...</h1>
+    <h2>Please don't refresh</h2>
+  </dialog>
   <script src="/public/player.js"></script>
 </body>
 

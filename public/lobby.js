@@ -13,6 +13,7 @@ let STATE = {
 
 function update_question() {
   question_element.innerText = STATE.current_question.question
+  next_button.style.visibility = "false"
 }
 
 function connect(uri) {
@@ -33,7 +34,7 @@ function connect(uri) {
 
   events.addEventListener("player_joined", (e) => {
     const json = JSON.parse(e.data)
-    console.log(`Player ${json.name} joined`)
+    console.log(`Player ${json.name} with id ${json.id} joined`)
     STATE.players.push(json)
 
     const listItem = document.createElement("li")
@@ -52,6 +53,12 @@ function connect(uri) {
     STATE.started = true
     STATE.current_question = json.question
     update_question()
+
+    events.addEventListener("answer", (e) => {
+      const json = JSON.parse(e.data)
+      console.log(json)
+    })
+
   })
 }
 

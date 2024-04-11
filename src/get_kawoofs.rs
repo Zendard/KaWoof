@@ -42,6 +42,7 @@ pub async fn get_kawoofs(user: UserAuth) -> Template {
                 .map(|e| e.to_string())
                 .collect();
             questions.push(Question {
+                id: (*question_id).into(),
                 question: question_raw.question,
                 correct_answer: question_raw.correct_answer.try_into().unwrap(),
                 answers,

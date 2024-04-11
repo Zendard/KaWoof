@@ -28,7 +28,8 @@ pub async fn stream<'a>(queue: &State<Sender<HostEvent>>, mut end: Shutdown) -> 
          };
         match msg {
             HostEvent::PlayerJoined(msg) => yield Event::json(&msg).event("player_joined"),
-            HostEvent::NextQuestion(msg)=> yield Event::json(&msg).event("next_question"),
+            HostEvent::NextQuestion(msg) => yield Event::json(&msg).event("next_question"),
+            HostEvent::Answer(msg) => yield Event::json(&msg).event("answer"),
         };
         }
     }
@@ -45,6 +46,7 @@ pub async fn next_question(
     let question_counter = question_counter.into_inner();
 
     let question = ClientQuestion {
+        id: kawoof.questions[question_counter].id,
         question: kawoof.questions[question_counter].question.clone(),
         answers: kawoof.questions[question_counter].answers.clone(),
     };

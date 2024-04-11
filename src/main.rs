@@ -9,6 +9,7 @@ mod create;
 mod get_kawoofs;
 mod host_kawoof;
 mod join_kawoof;
+mod kawoof_manage;
 
 #[get("/")]
 async fn index(user: UserAuth) -> Option<NamedFile> {
@@ -63,6 +64,7 @@ fn rocket() -> _ {
                 join_kawoof::redirect_to_kawoof_id
             ],
         )
+        .mount("/lobby", routes![kawoof_manage::check_answer])
         .mount("/public", FileServer::from("public"))
         .attach(rocket_dyn_templates::Template::fairing())
         .manage(rocket::tokio::sync::broadcast::channel::<HostEvent>(1024).0)
@@ -75,8 +77,16 @@ pub struct NextQuestionEvent {
     question: ClientQuestion,
 }
 
+#[derive(Clone, Serialize, Debug)]
+pub struct AnswerEvent {
+    correct: bool,
+    player_id: u32,
+    kawoof_id: u32,
+}
+
 #[derive(Serialize, Debug, Clone)]
 struct ClientQuestion {
+    id: u32,
     question: String,
     answers: Vec<String>,
 }
@@ -85,6 +95,7 @@ struct ClientQuestion {
 pub enum HostEvent {
     PlayerJoined(Player),
     NextQuestion(NextQuestionEvent),
+    Answer(AnswerEvent),
 }
 //======Authentication/Users======
 static SECRET_KEY: &str = env!("SECRET_KEY");
@@ -103,8 +114,10 @@ pub struct UserDB {
 
 #[derive(rocket::serde::Serialize, Clone, Debug, FromForm)]
 pub struct Player {
+    id: u32,
     name: String,
     kawoof_id: u32,
+    points: u32,
 }
 //============Kawoofs============
 #[derive(std::fmt::Debug, Serialize, Clone)]
@@ -117,6 +130,7 @@ pub struct KaWoof {
 
 #[derive(FromForm, std::fmt::Debug, Serialize, Clone)]
 struct Question {
+    id: u32,
     question: String,
     answers: Vec<String>,
     correct_answer: u8,
@@ -192,6 +206,7 @@ pub async fn query_kawoof(id: u32, user: Option<&UserAuth>) -> KaWoof {
             .collect();
 
         questions.push(Question {
+            id: (*question_id).into(),
             question: question_raw.question,
             correct_answer: question_raw.correct_answer.try_into().unwrap(),
             answers,

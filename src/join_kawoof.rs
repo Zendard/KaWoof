@@ -4,6 +4,7 @@ use rocket::fs::NamedFile;
 use rocket::tokio::sync::broadcast::Sender;
 use rocket::State;
 use rocket_dyn_templates::{context, Template};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 #[get("/join")]
 pub async fn enter_id() -> Option<NamedFile> {
@@ -21,16 +22,22 @@ pub struct Username {
     name: String,
 }
 
+static PLAYER_ID_COUTER: AtomicU32 = AtomicU32::new(0);
+
 #[post("/lobby/<kawoof_id>", data = "<player>")]
 pub async fn join(
     kawoof_id: u32,
     player: Form<Username>,
     queue: &State<Sender<crate::HostEvent>>,
 ) -> Template {
+    let player_id = PLAYER_ID_COUTER.fetch_add(1, Ordering::Relaxed);
+
     queue
         .send(crate::HostEvent::PlayerJoined(Player {
+            id: player_id,
             kawoof_id,
             name: player.name.clone(),
+            points: 0,
         }))
         .unwrap();
 
@@ -40,7 +47,7 @@ pub async fn join(
         author: kawoof.author,
     };
 
-    Template::render("client_play", context! {client_kawoof})
+    Template::render("client_play", context! {client_kawoof,player_id})
 }
 
 #[derive(FromForm)]
