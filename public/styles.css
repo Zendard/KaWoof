@@ -59,7 +59,8 @@ a.button {
   flex-wrap: wrap;
 }
 
-form {
+form,
+dialog[open] {
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -74,4 +75,15 @@ fieldset.group {
   background-color: var(--primary);
   border: none;
   padding: 1rem;
+}
+
+dialog {
+  padding: 2rem;
+  border-radius: 2rem;
+  background-color: var(--primary);
+  border: none;
+}
+::backdrop {
+  background-color: var(--background);
+  opacity: 1;
 }

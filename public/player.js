@@ -1,7 +1,7 @@
 const question_element = document.getElementById("question")
 const answers_element = document.getElementById("answers")
 const kawoof_id = window.location.pathname.replace("/lobby/", "")
-const reconnecting_dialog = document.getElementById("reconnecting_dialog")
+const reconnecting_dialog = document.getElementById("reconnecting-dialog")
 
 let STATE = {
   connected: false,
@@ -49,8 +49,8 @@ function connect(uri) {
     events.close()
 
     console.error(`Connection lost, reconnecting...`)
-    reconnecting_dialog.show()
-    setTimeout(() => connect(uri), 1000)
+    reconnecting_dialog.showModal()
+    setTimeout(() => { connect(uri) }, 1000)
   })
 
   events.addEventListener("next_question", (e) => {

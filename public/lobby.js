@@ -1,7 +1,8 @@
-let question_element = document.getElementById("question")
-let player_list = document.getElementById("players")
-let kawoof_id = window.location.pathname.replace("/host/", "")
-let next_button = document.getElementById("next_button")
+const question_element = document.getElementById("question")
+const player_list = document.getElementById("players")
+const kawoof_id = window.location.pathname.replace("/host/", "")
+const next_button = document.getElementById("next_button")
+const reconnecting_dialog = document.getElementById("reconnecting-dialog")
 
 let STATE = {
   connected: false,
@@ -22,6 +23,7 @@ function connect(uri) {
   events.addEventListener("open", (_) => {
     STATE.connected = true
     console.log(`Connected to stream at ${uri}`)
+    reconnecting_dialog.close()
   })
 
   events.addEventListener("error", (_) => {
@@ -29,6 +31,7 @@ function connect(uri) {
     events.close()
 
     console.error(`Connection lost, reconnecting...`)
+    reconnecting_dialog.showModal()
     setTimeout(() => connect(uri), 1000)
   })
 
