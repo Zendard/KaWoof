@@ -16,6 +16,11 @@ async fn index(user: UserAuth) -> Option<NamedFile> {
     NamedFile::open("views/index.html").await.ok()
 }
 
+#[get("/favicon.ico")]
+async fn favicon() -> Option<NamedFile> {
+    NamedFile::open("public/favicon.ico").await.ok()
+}
+
 #[catch(401)]
 async fn no_account() -> Option<NamedFile> {
     println!("Not logged in");
@@ -25,7 +30,7 @@ async fn no_account() -> Option<NamedFile> {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index])
+        .mount("/", routes![index, favicon])
         .register("/", catchers![no_account])
         .mount(
             "/auth",
@@ -60,17 +65,26 @@ fn rocket() -> _ {
         )
         .mount("/public", FileServer::from("public"))
         .attach(rocket_dyn_templates::Template::fairing())
-        .manage(rocket::tokio::sync::broadcast::channel::<Player>(1024).0)
-        .manage(rocket::tokio::sync::broadcast::channel::<u32>(1).0)
+        .manage(rocket::tokio::sync::broadcast::channel::<HostEvent>(1024).0)
 }
 
 //===========================Exports=============================
+#[derive(Clone, Serialize, Debug)]
+pub struct NextQuestionEvent {
+    kawoof_id: u32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub enum HostEvent {
+    PlayerJoined(Player),
+    NextQuestion(NextQuestionEvent),
+}
 //======Authentication/Users======
 static SECRET_KEY: &str = env!("SECRET_KEY");
 
 #[rocket_jwt_new::jwt(SECRET_KEY, cookie = "token")]
 pub struct UserAuth {
-    id: i64,
+    id: u32,
 }
 
 #[derive(FromForm, Debug, PartialEq, sqlx::FromRow)]
@@ -83,21 +97,22 @@ pub struct UserDB {
 #[derive(rocket::serde::Serialize, Clone, Debug, FromForm)]
 pub struct Player {
     name: String,
+    kawoof_id: u32,
 }
 //============Kawoofs============
-#[derive(std::fmt::Debug, Serialize)]
+#[derive(std::fmt::Debug, Serialize, Clone)]
 pub struct KaWoof {
-    id: i64,
+    id: u32,
     title: String,
-    author: i64,
+    author: u32,
     questions: Vec<Question>,
 }
 
-#[derive(FromForm, std::fmt::Debug, Serialize)]
+#[derive(FromForm, std::fmt::Debug, Serialize, Clone)]
 struct Question {
     question: String,
     answers: Vec<String>,
-    correct_answer: i64,
+    correct_answer: u8,
 }
 
 #[derive(Debug)]
@@ -122,18 +137,34 @@ pub async fn db_connection() -> sqlx::Pool<sqlx::Sqlite> {
         .unwrap()
 }
 
-pub async fn query_kawoof(id: i64, user: &UserAuth) -> KaWoof {
+pub async fn query_kawoof(id: u32, user: Option<&UserAuth>) -> KaWoof {
     let connection = db_connection().await;
 
-    let kawoof_raw = sqlx::query_as!(
-        KawoofDB,
-        "SELECT * FROM kawoofs WHERE id=? AND author=?",
-        id,
-        user.id
-    )
-    .fetch_one(&connection)
-    .await
-    .unwrap();
+    let kawoof_raw = match user {
+        Some(user) => kawoof_raw_with_author(id, user.id).await,
+        None => kawoof_raw_withouth_author(id).await,
+    };
+
+    async fn kawoof_raw_with_author(id: u32, user_id: u32) -> KawoofDB {
+        let connection = db_connection().await;
+        sqlx::query_as!(
+            KawoofDB,
+            "SELECT * FROM kawoofs WHERE id=? AND author=?",
+            id,
+            user_id
+        )
+        .fetch_one(&connection)
+        .await
+        .unwrap()
+    }
+
+    async fn kawoof_raw_withouth_author(id: u32) -> KawoofDB {
+        let connection = db_connection().await;
+        sqlx::query_as!(KawoofDB, "SELECT * FROM kawoofs WHERE id=?", id,)
+            .fetch_one(&connection)
+            .await
+            .unwrap()
+    }
 
     let mut questions: Vec<Question> = vec![];
 
@@ -155,15 +186,15 @@ pub async fn query_kawoof(id: i64, user: &UserAuth) -> KaWoof {
 
         questions.push(Question {
             question: question_raw.question,
-            correct_answer: question_raw.correct_answer,
+            correct_answer: question_raw.correct_answer.try_into().unwrap(),
             answers,
         });
     }
 
     KaWoof {
-        id: kawoof_raw.id,
+        id: kawoof_raw.id.try_into().unwrap(),
         title: kawoof_raw.title,
-        author: kawoof_raw.id,
+        author: kawoof_raw.id.try_into().unwrap(),
         questions,
     }
 }

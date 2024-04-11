@@ -8,8 +8,8 @@ use crate::UserAuth;
 use rocket_dyn_templates::{context, Template};
 
 #[get("/<id>")]
-pub async fn kawoof_details(user: UserAuth, id: i64) -> Template {
-    let kawoof = query_kawoof(id, &user).await;
+pub async fn kawoof_details(user: UserAuth, id: u32) -> Template {
+    let kawoof = query_kawoof(id, Some(&user)).await;
 
     Template::render("kawoof_details", context! {user, kawoof})
 }
@@ -43,14 +43,14 @@ pub async fn get_kawoofs(user: UserAuth) -> Template {
                 .collect();
             questions.push(Question {
                 question: question_raw.question,
-                correct_answer: question_raw.correct_answer,
+                correct_answer: question_raw.correct_answer.try_into().unwrap(),
                 answers,
             })
         }
         kawoofs.push(KaWoof {
-            id: kawoof.id,
+            id: kawoof.id.try_into().unwrap(),
             title: kawoof.title.clone(),
-            author: kawoof.author,
+            author: kawoof.author.try_into().unwrap(),
             questions,
         })
     }

@@ -1,23 +1,53 @@
-let playerList = document.getElementById("players")
+let question_element = document.getElementById("question")
+let player_list = document.getElementById("players")
 let kawoof_id = window.location.pathname.replace("/host/", "")
 let next_button = document.getElementById("next_button")
-console.log(kawoof_id)
 
-const events = new EventSource(document.URL + "/events")
+let STATE = {
+  connected: false,
+  started: false,
+  current_question: "",
+  players: []
+}
+
+function connect(uri) {
+  const events = new EventSource(uri)
+
+  events.addEventListener("open", (_) => {
+    STATE.connected = true
+    console.log(`Connected to stream at ${uri}`)
+  })
+
+  events.addEventListener("error", (_) => {
+    STATE.connected = false
+    events.close()
+
+    console.error(`Connection lost, reconnecting...`)
+    setTimeout(() => connect(uri), 1000)
+  })
+
+  events.addEventListener("player_joined", (e) => {
+    const json = JSON.parse(e.data)
+    console.log(`Player ${json.name} joined`)
+    STATE.players.push(json)
+
+    const listItem = document.createElement("li")
+    listItem.innerText = json.name
+    player_list.appendChild(listItem)
+  })
+
+  events.addEventListener("next_question", (e) => {
+    const json = JSON.parse(e.data)
+    console.log(json)
+
+    STATE.started = true
+    STATE.current_question = json.question
+  })
+}
 
 next_button.addEventListener("click", (_e) => {
   window.fetch(document.URL + "/next-question", { method: "post" });
-
 })
 
-events.addEventListener("player_joined", (e) => {
-  console.log("Player joined!")
-  console.log(e.data)
-  const listItem = document.createElement("li")
-  listItem.innerText = JSON.parse(e.data).name
-  playerList.appendChild(listItem)
-})
-
-events.addEventListener("next_question", (e) => {
-  console.log(JSON.parse(e.data));
-})
+const uri = "/host/events"
+connect(uri)

@@ -62,7 +62,7 @@ pub async fn check_user(
     };
 
     let token = UserAuth::sign(UserAuth {
-        id: correct_user_vec[0].id,
+        id: correct_user_vec[0].id.try_into().unwrap(),
     });
     println!("{:#?}", UserAuth::decode(token.clone()));
 
