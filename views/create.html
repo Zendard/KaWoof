@@ -8,68 +8,72 @@
   </head>
 
   <body>
-    <form action="/create" method="POST">
+    <form>
       <input type="text" name="title" placeholder="KaWoof title" />
       <fieldset class="questions">
-        <fieldset class="group">
-          <input
-            type="text"
-            name="questions[1].question"
-            placeholder="Question"
-          />
-          <fieldset class="answers">
-            <fieldset class="answer">
-              <input
-                type="text"
-                name="questions[1].answers[1]"
-                placeholder="Answer 1"
-              />
-              <input
-                type="radio"
-                name="questions[1].correct_answer"
-                value="1"
-              />
-            </fieldset>
-            <fieldset class="answer">
-              <input
-                type="text"
-                name="questions[1].answers[2]"
-                placeholder="Answer 2"
-              />
-              <input
-                type="radio"
-                name="questions[1].correct_answer"
-                value="2"
-              />
-            </fieldset>
-            <fieldset class="answer">
-              <input
-                type="text"
-                name="questions[1].answers[3]"
-                placeholder="Answer 3"
-              />
-              <input
-                type="radio"
-                name="questions[1].correct_answer"
-                value="3"
-              />
-            </fieldset>
-            <fieldset class="answer">
-              <input
-                type="text"
-                name="questions[1].answers[4]"
-                placeholder="Answer 4"
-              />
-              <input
-                type="radio"
-                name="questions[1].correct_answer"
-                value="4"
-              />
+        <template>
+          <fieldset class="group">
+            <input
+              class="question-input"
+              type="text"
+              name="questions[?].question"
+              placeholder="Question"
+            />
+            <fieldset class="answers">
+              <fieldset class="answer">
+                <input
+                  type="text"
+                  name="questions[?].answers[1]"
+                  placeholder="Answer 1"
+                />
+                <input
+                  type="radio"
+                  name="questions[?].correct_answer"
+                  value="1"
+                />
+              </fieldset>
+              <fieldset class="answer">
+                <input
+                  type="text"
+                  name="questions[?].answers[2]"
+                  placeholder="Answer 2"
+                />
+                <input
+                  type="radio"
+                  name="questions[?].correct_answer"
+                  value="2"
+                />
+              </fieldset>
+              <fieldset class="answer">
+                <input
+                  type="text"
+                  name="questions[?].answers[3]"
+                  placeholder="Answer 3"
+                />
+                <input
+                  type="radio"
+                  name="questions[?].correct_answer"
+                  value="3"
+                />
+              </fieldset>
+              <fieldset class="answer">
+                <input
+                  type="text"
+                  name="questions[?].answers[4]"
+                  placeholder="Answer 4"
+                />
+                <input
+                  type="radio"
+                  name="questions[?].correct_answer"
+                  value="4"
+                />
+              </fieldset>
             </fieldset>
           </fieldset>
-        </fieldset>
+        </template>
       </fieldset>
       <button>Create</button>
     </form>
+    <script src="/public/add_create_fields.js"></script>
   </body>
 </html>

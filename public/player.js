@@ -14,6 +14,7 @@ function update_question() {
   question_element.innerText = STATE.current_question.question
 
   const answers = STATE.current_question.answers
+  Array.from(answers_element.children).forEach((e) => e.remove())
   for (let answer_index = 1; answer_index <= answers.length; answer_index++) {
     let button = document.createElement("button")
     button.innerText = answers[answer_index - 1]
@@ -32,7 +33,9 @@ function sendAnswer(answer_index) {
     player_id: STATE.player_id,
   }
   console.log(params)
-  window.fetch(document.URL + "/post-answer", { method: "post", body: new URLSearchParams(params) })
+  window.fetch(document.URL + "/post-answer", { method: "post", body: new URLSearchParams(params) }).then((e) => {
+    if (e.ok) Array.from(answers_element.children).forEach((e) => e.remove())
+  })
 }
 
 function connect(uri) {

@@ -41,14 +41,14 @@ pub async fn next_question(
     kawoof_id: u32,
     queue: &State<Sender<HostEvent>>,
     question_counter: rocket::form::Form<usize>,
-) {
+) -> Option<String> {
     let kawoof = query_kawoof(kawoof_id, Some(&user)).await;
     let question_counter = question_counter.into_inner();
 
     let question = ClientQuestion {
-        id: kawoof.questions[question_counter].id,
-        question: kawoof.questions[question_counter].question.clone(),
-        answers: kawoof.questions[question_counter].answers.clone(),
+        id: kawoof.questions.get(question_counter)?.id,
+        question: kawoof.questions.get(question_counter)?.question.clone(),
+        answers: kawoof.questions.get(question_counter)?.answers.clone(),
     };
 
     queue
@@ -57,4 +57,6 @@ pub async fn next_question(
             question,
         }))
         .unwrap();
+
+    Some("Next question".to_string())
 }

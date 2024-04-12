@@ -1,5 +1,4 @@
 use crate::db_connection;
-use crate::Question;
 use crate::UserAuth;
 use rocket::form::Form;
 use rocket::fs::NamedFile;
@@ -12,7 +11,14 @@ pub async fn create(_user: UserAuth) -> Option<NamedFile> {
 #[derive(FromForm)]
 pub struct KaWoofForm {
     title: String,
-    questions: Vec<Question>,
+    questions: Vec<QuestionForm>,
+}
+
+#[derive(FromForm)]
+pub struct QuestionForm {
+    question: String,
+    correct_answer: u8,
+    answers: Vec<String>,
 }
 
 #[post("/", data = "<kawoof>")]
@@ -20,7 +26,6 @@ pub async fn create_post(user: UserAuth, kawoof: Form<KaWoofForm>) -> rocket::re
     let connection = db_connection().await;
 
     let mut question_ids: Vec<i64> = vec![];
-    println!("{:#?}", kawoof.questions);
     for question in kawoof.questions.iter() {
         let answers_joined = question
             .answers

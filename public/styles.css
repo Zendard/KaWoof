@@ -59,6 +59,7 @@ a.button {
   flex-wrap: wrap;
 }
 
+.questions,
 form,
 dialog[open] {
   display: flex;
@@ -67,14 +68,24 @@ dialog[open] {
   gap: 1rem;
 }
 
+form {
+  overflow: scroll;
+  gap: 3rem;
+}
+
 fieldset {
-  border-radius: 1rem;
+  display: flex;
+  gap: 2vw;
+  padding: 0px;
+  border: none;
 }
 
 fieldset.group {
-  background-color: var(--primary);
-  border: none;
-  padding: 1rem;
+  gap: 10vw;
+}
+
+fieldset.answer {
+  gap: 0px;
 }
 
 dialog {
